@@ -58,7 +58,7 @@ export abstract class BaseApiService {
     }
 
     if (this.enableLogging) {
-      console.log(`[API] ${config.method?.toUpperCase()} → ${config.url}`);
+      // console.log(`[API] ${config.method?.toUpperCase()} → ${config.url}`);
     }
 
     return config;
@@ -75,7 +75,7 @@ export abstract class BaseApiService {
   /** Обработка ответа */
   protected handleResponse<T>(response: AxiosResponse<T>): AxiosResponse<T> {
     if (this.enableLogging) {
-      console.log(`[API] Response ${response.status}:`, response.data);
+      // console.log(`[API] Response ${response.status}:`, response.data);
     }
     return response;
   }

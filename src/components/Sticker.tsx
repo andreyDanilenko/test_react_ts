@@ -39,13 +39,16 @@ export const Sticker: React.FC<StickerProps> = ({
   color = '#faafff',
   positionX = 50,
   positionY = 50,
-  isOwnedByUser = true, // По умолчанию true для обратной совместимости
+  isOwnedByUser = true, 
   onEdit,
   onDelete,
 }) => {
   const formattedTime = new Date(createdAt).toLocaleTimeString();
   const textColor = getContrastColor(color);
   const borderColor = getDarkerColor(color, 0.7);
+
+  console.log(isOwnedByUser);
+  
 
   return (
     <div
@@ -69,7 +72,7 @@ export const Sticker: React.FC<StickerProps> = ({
         <span>{formattedTime}</span>
         
         {/* Показываем иконки управления только для своих стикеров */}
-        {isOwnedByUser ? (
+        {isOwnedByUser && (
           <div className="flex gap-1">
             <button
               onClick={() => onEdit?.(id)}
@@ -105,8 +108,6 @@ export const Sticker: React.FC<StickerProps> = ({
               </svg>
             </button>
           </div>
-        ) : (
-          <span className="text-xs opacity-60">Чужой стикер</span>
         )}
       </div>
     </div>

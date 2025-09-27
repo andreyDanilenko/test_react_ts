@@ -24,7 +24,7 @@ export class BoardService extends BaseApiService {
     /** Получить все доски всех пользователей */
   async getAllBoards(): Promise<IBoardSanitized[]> {
     const response = await this.get<{ data: IBoardSanitized[]; message: string; success: boolean }>('/boards/all');
-    console.log(response.data);
+    // console.log(response.data);
     
     return response.data;
   }
@@ -57,11 +57,13 @@ export class BoardService extends BaseApiService {
   }
 
   /** Переместить стикер на другую доску или позицию */
-  moveStickyNote(stickyNoteId: string, boardId: string, positionX: number, positionY: number): Promise<IStickyNoteSanitized> {
-    return this.patch<IStickyNoteSanitized>(`/sticky-notes/${stickyNoteId}/move`, {
-      newBoardId: boardId,
-      newPosition: { x: positionX, y: positionY },
+  async moveStickyNote(stickyNoteId: string, positionX: number, positionY: number): Promise<IStickyNoteSanitized> {
+    const response = await this.patch<{ data: IStickyNoteSanitized; message: string; success: boolean }>(`/sticky-notes/${stickyNoteId}/move`, {
+      positionX,
+      positionY
     });
+    
+    return response.data
   }
 
   /** Удалить стикер */

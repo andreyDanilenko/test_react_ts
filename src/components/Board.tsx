@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef, useCallback, memo } from 'react';
 import { Sticker } from './Sticker';
 import { useBoardStore } from '../store/boardStore';
-import { useAuthStore } from '../store/authStore'; // Добавляем импорт authStore
+import { useAuthStore } from '../store/authStore';
 
-export const Board: React.FC = () => {
+export const Board: React.FC = memo(() => {
   const boardRef = useRef<HTMLDivElement>(null);
   const draggingNoteRef = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null);
   
@@ -15,20 +15,11 @@ export const Board: React.FC = () => {
     deleteStickyNote 
   } = useBoardStore();
 
-  useEffect(() =>{
-    console.log(stickyNotes);
-    
-  }, [stickyNotes])
+  const { user } = useAuthStore();  
+  const isBoardOwnedByUser = user?.id === currentBoard?.userId;  
 
-  const { user } = useAuthStore(); // Получаем текущего пользователя
-
-  const handleMouseDown = (e: React.MouseEvent, stickyId: string, positionX: number, positionY: number, stickyUserId: string) => {
-    // Проверяем, принадлежит ли стикер текущему пользователю
-    console.log(user, positionX, positionY);
-    
-    // if (!user || stickyUserId !== user.id) {
-    //   return; // Запрещаем перетаскивание чужого стикера
-    // }
+  const handleMouseDown = useCallback((e: React.MouseEvent, stickyId: string, positionX: number, positionY: number) => {
+    if (!isBoardOwnedByUser) return;
 
     const boardRect = boardRef.current?.getBoundingClientRect();
     if (!boardRect) return;
@@ -39,59 +30,67 @@ export const Board: React.FC = () => {
       offsetY: e.clientY - positionY,
     };
 
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!draggingNoteRef.current || !currentBoard) return;
+
+      const { id, offsetX, offsetY } = draggingNoteRef.current;
+      const boardRect = boardRef.current?.getBoundingClientRect();
+      if (!boardRect) return;
+
+      const boundedX = Math.max(0, Math.min(e.clientX - offsetX, boardRect.width - 160));
+      const boundedY = Math.max(0, Math.min(e.clientY - offsetY, boardRect.height - 192));
+
+      moveStickyNote(id, boundedX, boundedY);
+    };
+
+    const handleMouseUp = () => {
+      draggingNoteRef.current = null;
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-  };
+  }, [isBoardOwnedByUser, currentBoard, moveStickyNote]);
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!draggingNoteRef.current || !currentBoard) return;
-
-    const { id, offsetX, offsetY } = draggingNoteRef.current;
-    const boardRect = boardRef.current?.getBoundingClientRect();
-    if (!boardRect) return;
-
-    // Ограничиваем перемещение в пределах доски
-    const boundedX = Math.max(0, Math.min(e.clientX - offsetX, boardRect.width - 160));
-    const boundedY = Math.max(0, Math.min(e.clientY - offsetY, boardRect.height - 192));
-
-
-    console.log('boundedX', boundedX, boundedY);
-    
-    // Обновляем позицию через store
-    // moveStickyNote(id, currentBoard.id, boundedX, boundedY);
-  };
-
-  const handleMouseUp = () => {
-    draggingNoteRef.current = null;
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleMouseUp);
-  };
-
-  const handleEditSticky = (stickyId: string, stickyUserId: string, updates: { title?: string; content?: string; color?: string }) => {
-    // Проверяем, принадлежит ли стикер текущему пользователю
-
-    console.log('update');
-    
-    // if (!user || stickyUserId !== user.id) {
-    //   alert('Вы не можете редактировать чужой стикер');
-    //   return;
-    // }
-    updateStickyNote(stickyId, updates);
-  };
-
-  const handleDeleteSticky = (stickyId: string, stickyUserId: string) => {
-    // Проверяем, принадлежит ли стикер текущему пользователю
-    if (!user || stickyUserId !== user.id) {
-      alert('Вы не можете удалить чужой стикер');
+  const handleEditSticky = useCallback((stickyId: string, updates: { title?: string; content?: string; color?: string }) => {
+    if (!isBoardOwnedByUser) {
+      alert('Вы не можете редактировать стикеры на чужой доске');
       return;
     }
+    updateStickyNote(stickyId, updates);
+  }, [isBoardOwnedByUser, updateStickyNote]);
 
+  const handleDeleteSticky = useCallback((stickyId: string) => {
+    if (!isBoardOwnedByUser) {
+      alert('Вы не можете удалять стикеры с чужой доски');
+      return;
+    }
     if (window.confirm('Удалить этот стикер?')) {
       deleteStickyNote(stickyId);
     }
-  };
+  }, [isBoardOwnedByUser, deleteStickyNote]);
 
-  // Если нет текущей доски, показываем заглушку
+  // Оптимизация: мемоизируем обработчики для каждого стикера
+  const createStickyHandlers = useCallback((stickyId: string) => {
+    return {
+      onEdit: () => {
+        const newTitle = prompt('Новое название:', 
+          stickyNotes.find(s => s.id === stickyId)?.title || '');
+        if (newTitle) {
+          handleEditSticky(stickyId, { title: newTitle });
+        }
+      },
+      onDelete: () => handleDeleteSticky(stickyId),
+      onMouseDown: (e: React.MouseEvent) => {
+        const sticky = stickyNotes.find(s => s.id === stickyId);
+        if (sticky) {
+          handleMouseDown(e, stickyId, sticky.positionX, sticky.positionY);
+        }
+      }
+    };
+  }, [stickyNotes, handleEditSticky, handleDeleteSticky, handleMouseDown]);
+
   if (!currentBoard) {
     return (
       <main
@@ -130,31 +129,29 @@ export const Board: React.FC = () => {
         </div>
       </div>
       
-      {/* Используем стикеры из store */}
-      {stickyNotes.map(sticky => (
-        <div
-          key={sticky.id}
-          onMouseDown={e => handleMouseDown(e, sticky.id, sticky.positionX, sticky.positionY, sticky.userId)}
-        >
-          <Sticker
-            id={sticky.id}
-            title={sticky.title}
-            content={sticky.content}
-            color={sticky.color}
-            positionX={sticky.positionX}
-            positionY={sticky.positionY}
-            createdAt={sticky.createdAt}
-            isOwnedByUser={user?.id === sticky.userId} // Передаем информацию о принадлежности
-            onEdit={() => {
-              const newTitle = prompt('Новое название:', sticky.title);
-              if (newTitle) {
-                handleEditSticky(sticky.id, sticky.userId, { title: newTitle });
-              }
-            }}
-            onDelete={() => handleDeleteSticky(sticky.id, sticky.userId)}
-          />
-        </div>
-      ))}
+      {/* Стикеры */}
+      {stickyNotes.map(sticky => {
+        const handlers = createStickyHandlers(sticky.id);
+        
+        return (
+          <div key={sticky.id} onMouseDown={handlers.onMouseDown}>
+            <Sticker
+              id={sticky.id}
+              title={sticky.title}
+              content={sticky.content}
+              color={sticky.color}
+              positionX={sticky.positionX}
+              positionY={sticky.positionY}
+              createdAt={sticky.createdAt}
+              isOwnedByUser={isBoardOwnedByUser}
+              onEdit={handlers.onEdit}
+              onDelete={handlers.onDelete}
+            />
+          </div>
+        );
+      })}
     </main>
   );
-};
+});
+
+Board.displayName = 'Board';

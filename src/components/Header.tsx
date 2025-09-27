@@ -1,16 +1,17 @@
-// src/components/Header.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { CreateBoardModal } from './CreateBoardModal';
 import { useAuthStore } from '../store/authStore';
 import { useBoardStore } from '../store/boardStore';
+import type { IBoard } from '../types/board';
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [showMyBoards, setShowMyBoards] = useState(true);
   const [showOtherBoards, setShowOtherBoards] = useState(true);
-  
+
+
   const { user } = useAuthStore();
   const { 
     boards, 
@@ -22,30 +23,32 @@ export const Header: React.FC = () => {
     isLoading 
   } = useBoardStore();
 
-  useEffect(() => {
-    fetchAllBoards()
-    fetchUserBoards()
-    console.log('currentBoard',currentBoard);
-    
-  }, [user, fetchAllBoards, fetchUserBoards, currentBoard]);
 
   const myBoards = boards.filter(board => board.userId === user?.id);
   const otherBoards = boards.filter(board => board.userId !== user?.id);
 
-  const handleBoardSelect = (board: any) => {
+  // Мемоизируем обработчики
+  const handleBoardSelect = useCallback((board: IBoard) => {
     setCurrentBoard(board);
-    fetchPublicStickyNotes(board.id)
+    fetchPublicStickyNotes(board.id);
     setIsMenuOpen(false);
-  };
+  }, [setCurrentBoard, fetchPublicStickyNotes]);
 
-  const handleFetchAllBoards = async () => {
+  const handleFetchAllBoards = useCallback(async () => {
+    await fetchUserBoards();
     await fetchAllBoards();
-  };
+  }, [fetchUserBoards, fetchAllBoards]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     localStorage.removeItem('user');
     window.location.reload();
-  };
+  }, []);
+
+  // Используйте пустой массив зависимостей, если хотите вызвать только при монтировании
+  useEffect(() => {
+    console.log('Fetching boards...');
+    fetchAllBoards();
+  }, []); // 
 
   return (
     <>
@@ -72,7 +75,7 @@ export const Header: React.FC = () => {
             <div className="flex items-center space-x-3">
               {/* Информация о пользователе */}
               <div className="text-amber-100 text-sm mr-2">
-                {user?.name}
+                {user?.firstName}
               </div>
 
               {/* Кнопка создания доски */}

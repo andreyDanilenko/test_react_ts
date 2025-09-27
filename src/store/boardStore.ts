@@ -25,14 +25,14 @@ interface BoardState {
   fetchPublicStickyNotes: (boardId: string) => Promise<void>;
   createStickyNote: (data: IStickyNoteCreate) => Promise<void>;
   updateStickyNote: (stickyNoteId: string, data: IStickyNoteUpdate) => Promise<void>;
-  moveStickyNote: (stickyNoteId: string, boardId: string, positionX: number, positionY: number) => Promise<void>;
+  moveStickyNote: (stickyNoteId: string, positionX: number, positionY: number) => Promise<void>;
   deleteStickyNote: (stickyNoteId: string) => Promise<void>;
   clearError: () => void;
 }
 
 const boardService = new BoardService();
 
-export const useBoardStore = create<BoardState>((set) => ({
+export const useBoardStore = create<BoardState>((set, get) => ({
   // Начальное состояние
   boards: [],
   currentBoard: null,
@@ -54,6 +54,14 @@ export const useBoardStore = create<BoardState>((set) => ({
   },
 
   fetchAllBoards: async () => {
+    const state = get();
+    
+    // Проверяем, не загружаем ли мы уже данные
+    if (state.isLoading) return;
+    
+    // Или проверяем, есть ли уже данные
+    // if (state.boards.length > 0) return;
+    
     set({ isLoading: true, error: null });
     try {
       const boards = await boardService.getAllBoards();
@@ -126,10 +134,10 @@ export const useBoardStore = create<BoardState>((set) => ({
     }
   },
 
-  moveStickyNote: async (stickyNoteId: string, boardId: string, positionX: number, positionY: number) => {
+  moveStickyNote: async (stickyNoteId: string, positionX: number, positionY: number) => {
     set({ isLoading: true, error: null });
     try {
-      const movedSticky = await boardService.moveStickyNote(stickyNoteId, boardId, positionX, positionY);
+      const movedSticky = await boardService.moveStickyNote(stickyNoteId, positionX, positionY);
       set(state => ({
         stickyNotes: state.stickyNotes.map(sticky =>
           sticky.id === stickyNoteId ? movedSticky : sticky
