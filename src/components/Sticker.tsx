@@ -45,7 +45,7 @@ export const Sticker: React.FC<StickerProps> = ({
 }) => {
   const formattedTime = new Date(createdAt).toLocaleTimeString();
   const textColor = getContrastColor(color);
-  const borderColor = getDarkerColor(color, 0.7);
+  const borderColor = getDarkerColor(color, 0.9);
 
   console.log(isOwnedByUser);
   
