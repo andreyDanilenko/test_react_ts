@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, memo } from 'react';
+import React, { useRef, useCallback, memo, useState, useEffect } from 'react';
 import { Sticker } from './Sticker';
 import { useBoardStore } from '../store/boardStore';
 import { useAuthStore } from '../store/authStore';
@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore';
 export const Board: React.FC = memo(() => {
   const boardRef = useRef<HTMLDivElement>(null);
   const draggingNoteRef = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null);
-  
+
   const { 
     currentBoard, 
     stickyNotes, 
@@ -15,12 +15,16 @@ export const Board: React.FC = memo(() => {
     deleteStickyNote 
   } = useBoardStore();
 
+  const [stickers, setStickers] = useState(stickyNotes)
   const { user } = useAuthStore();  
   const isBoardOwnedByUser = user?.id === currentBoard?.userId;  
 
+  useEffect(() => {
+    setStickers(stickyNotes)
+  }, [stickyNotes])
+
   const handleMouseDown = useCallback((e: React.MouseEvent, stickyId: string, positionX: number, positionY: number) => {
     if (!isBoardOwnedByUser) return;
-
     const boardRect = boardRef.current?.getBoundingClientRect();
     if (!boardRect) return;
 
@@ -29,6 +33,7 @@ export const Board: React.FC = memo(() => {
       offsetX: e.clientX - positionX,
       offsetY: e.clientY - positionY,
     };
+    const moveTimeoutRef = { current: null as number | null };
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!draggingNoteRef.current || !currentBoard) return;
@@ -40,38 +45,47 @@ export const Board: React.FC = memo(() => {
       const boundedX = Math.max(0, Math.min(e.clientX - offsetX, boardRect.width - 160));
       const boundedY = Math.max(0, Math.min(e.clientY - offsetY, boardRect.height - 192));
 
-      moveStickyNote(id, boundedX, boundedY);
+      setStickers(prevStickers => 
+        prevStickers.map(sticker => {         
+         if (sticker.id === stickyId) {
+            return {
+              ...sticker, 
+              positionX: boundedX, 
+              positionY: boundedY,
+            }
+         }
+
+         return sticker
+        })
+      );
+      
+      if (moveTimeoutRef.current) {
+        clearTimeout(moveTimeoutRef.current);
+      }
+      
+      moveTimeoutRef.current = window.setTimeout(() => {
+        moveStickyNote(id, boundedX, boundedY);
+      }, 150);
     };
 
     const handleMouseUp = () => {
       draggingNoteRef.current = null;
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
-    };
+    };    
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
   }, [isBoardOwnedByUser, currentBoard, moveStickyNote]);
 
   const handleEditSticky = useCallback((stickyId: string, updates: { title?: string; content?: string; color?: string }) => {
-    if (!isBoardOwnedByUser) {
-      alert('Вы не можете редактировать стикеры на чужой доске');
-      return;
-    }
     updateStickyNote(stickyId, updates);
-  }, [isBoardOwnedByUser, updateStickyNote]);
+  }, [updateStickyNote]);
 
   const handleDeleteSticky = useCallback((stickyId: string) => {
-    if (!isBoardOwnedByUser) {
-      alert('Вы не можете удалять стикеры с чужой доски');
-      return;
-    }
-    if (window.confirm('Удалить этот стикер?')) {
       deleteStickyNote(stickyId);
-    }
-  }, [isBoardOwnedByUser, deleteStickyNote]);
+  }, [deleteStickyNote]);
 
-  // Оптимизация: мемоизируем обработчики для каждого стикера
   const createStickyHandlers = useCallback((stickyId: string) => {
     return {
       onEdit: () => {
@@ -130,7 +144,7 @@ export const Board: React.FC = memo(() => {
       </div>
       
       {/* Стикеры */}
-      {stickyNotes.map(sticky => {
+      {stickers.map(sticky => {
         const handlers = createStickyHandlers(sticky.id);
         
         return (
