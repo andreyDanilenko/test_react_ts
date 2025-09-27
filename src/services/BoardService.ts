@@ -16,33 +16,48 @@ export class BoardService extends BaseApiService {
         enableLogging: true,
     });
   }
-  /** Получить все доски */
-  async getAllBoards(): Promise<IBoardSanitized[]> {
+  /** Получить все доски авторизованного пользователя */
+  async getUserBoards(): Promise<IBoardSanitized[]> {
     const response = await this.get<{ data: IBoardSanitized[]; message: string; success: boolean }>('/boards');
     return response.data; // возвращаем только массив досок
   }
+    /** Получить все доски всех пользователей */
+  async getAllBoards(): Promise<IBoardSanitized[]> {
+    const response = await this.get<{ data: IBoardSanitized[]; message: string; success: boolean }>('/boards/all');
+    console.log(response.data);
+    
+    return response.data;
+  }
   /** Создать новую доску */
-  createBoard(data: IBoardCreate): Promise<IBoardSanitized> {
+  async createBoard(data: IBoardCreate): Promise<IBoardSanitized> {
     return this.post<IBoardSanitized>('/boards', data);
   }
 
   /** Получить все стикеры для доски */
-  getStickyNotes(boardId: number): Promise<IStickyNoteSanitized[]> {
-    return this.get<IStickyNoteSanitized[]>(`/boards/${boardId}/sticky-notes`);
+  async getStickyNotes(boardId: string): Promise<IStickyNoteSanitized[]> {
+    const response = await this.get<{ data: { board: IBoardSanitized, stickyNotes: IStickyNoteSanitized[] }; message: string; success: boolean }>(`/boards/${boardId}/sticky-notes`);
+    return response.data.stickyNotes
   }
 
+  async getPublicStickyNotes(boardId: string): Promise<IStickyNoteSanitized[]> {
+    const response = await this.get<{  data: { board: IBoardSanitized, stickyNotes: IStickyNoteSanitized[] }; message: string; success: boolean }>(`/boards/${boardId}/all/sticky-notes`);    
+    return response.data.stickyNotes
+  }
+
+
   /** Создать стикер на доске */
-  createStickyNote(boardId: number, data: IStickyNoteCreate): Promise<IStickyNoteSanitized> {
+  createStickyNote(boardId: string, data: IStickyNoteCreate): Promise<IStickyNoteSanitized> {
     return this.post<IStickyNoteSanitized>(`/boards/${boardId}/sticky-notes`, data);
   }
 
   /** Обновить стикер */
-  updateStickyNote(stickyNoteId: number, data: IStickyNoteUpdate): Promise<IStickyNoteSanitized> {
-    return this.put<IStickyNoteSanitized>(`/sticky-notes/${stickyNoteId}`, data);
+  async updateStickyNote(stickyNoteId: string, data: IStickyNoteUpdate): Promise<IStickyNoteSanitized> {
+    const response = await this.put<{ data: IStickyNoteSanitized; message: string; success: boolean }>(`/sticky-notes/${stickyNoteId}`, data)
+    return response.data;
   }
 
   /** Переместить стикер на другую доску или позицию */
-  moveStickyNote(stickyNoteId: number, boardId: number, positionX: number, positionY: number): Promise<IStickyNoteSanitized> {
+  moveStickyNote(stickyNoteId: string, boardId: string, positionX: number, positionY: number): Promise<IStickyNoteSanitized> {
     return this.patch<IStickyNoteSanitized>(`/sticky-notes/${stickyNoteId}/move`, {
       newBoardId: boardId,
       newPosition: { x: positionX, y: positionY },
@@ -50,7 +65,7 @@ export class BoardService extends BaseApiService {
   }
 
   /** Удалить стикер */
-  deleteStickyNote(stickyNoteId: number): Promise<void> {
+  deleteStickyNote(stickyNoteId: string): Promise<void> {
     return this.delete<void>(`/sticky-notes/${stickyNoteId}`);
   }
 }

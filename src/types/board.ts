@@ -1,5 +1,5 @@
 export interface IStickyNote {
-  id: number;
+  id: string;
   title: string;
   content?: string;
   color?: string;
@@ -16,7 +16,7 @@ export interface IStickyNoteCreate {
   color?: string;
   positionX?: number;
   positionY?: number;
-  boardId: number;
+  boardId: string;
 }
 
 export interface IStickyNoteUpdate {
@@ -28,22 +28,22 @@ export interface IStickyNoteUpdate {
 }
 
 export interface IStickyNoteSanitized {
-  id: number;
+  id: string;
   title: string;
   content?: string;
   color?: string;
   positionX: number;
   positionY: number;
-  boardId: number;
+  boardId: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface IBoard {
-  id: number;
+  id: string;
   title: string;
   description?: string;
-  userId: number;
+  userId: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,14 +51,14 @@ export interface IBoard {
 export interface IBoardCreate {
   title: string;
   description?: string;
-  userId: number;
+  userId: string;
 }
 
 export interface IBoardSanitized {
-  id: number;
+  id: string;
   title: string;
   description?: string;
-  userId: number;
+  userId: string;
   createdAt: Date;
   updatedAt: Date;
 }
