@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { CreateBoardModal } from './CreateBoardModal';
 import { useAuthStore } from '../store/authStore';
 import { useBoardStore } from '../store/boardStore';
 import type { IBoard } from '../types/board';
+import { CreateBoardModal } from './modals/CreateBoardModal';
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -43,7 +43,7 @@ export const Header: React.FC = () => {
   }, [resetUser]);
 
   const handleLogin = useCallback(() => {
-    
+
   }, []);
 
 
