@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 
 import { useAuthStore } from '../store/authStore';
 import { useBoardStore } from '../store/boardStore';
@@ -7,58 +7,38 @@ import { CreateBoardModal } from './modals/CreateBoardModal';
 import { Button } from './uikit/BaseButton';
 import { AuthModal } from './modals/AuthModal';
 import { RegisterModal } from './modals/RegisterModal';
+import { Tooltip } from './uikit/BaseTooltip';
+import { BoardsTooltipContent } from './BoardsTooltipContent';
 
 export const Header: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [showMyBoards, setShowMyBoards] = useState(true);
-  const [showOtherBoards, setShowOtherBoards] = useState(true);
-
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-
-
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  
   const { user, resetUser } = useAuthStore();
   const { 
-    boards, 
     currentBoard, 
     setCurrentBoard, 
     fetchPublicStickyNotes,
-    fetchUserBoards, 
-    fetchAllBoards,
-    isLoading 
   } = useBoardStore();
-
-  const myBoards = boards.filter(board => board.userId === user?.id);
-  const otherBoards = boards.filter(board => board.userId !== user?.id);
 
   const handleBoardSelect = useCallback((board: IBoard) => {
     setCurrentBoard(board);
     fetchPublicStickyNotes(board.id);
-    setIsMenuOpen(false);
+    setIsTooltipOpen(false);
   }, [setCurrentBoard, fetchPublicStickyNotes]);
 
-  const handleFetchAllBoards = useCallback(async () => {
-    await fetchUserBoards();
-    await fetchAllBoards();
-  }, [fetchUserBoards, fetchAllBoards]);
-
+  console.log('currentBoard', currentBoard);
+  
   const handleLogout = useCallback(() => {
     localStorage.removeItem('authToken');
     resetUser()
   }, [resetUser]);
 
-  useEffect(() => {
-    console.log('Fetching boards...');    
-    fetchAllBoards();
-  }, []); // 
-
-  console.log(user);
-
   const handleOpenAuthModal = () => {
     setIsAuthModalOpen(true);
   };
-
 
   const handleSwitchToRegister = () => {
     setIsAuthModalOpen(false);
@@ -69,7 +49,6 @@ export const Header: React.FC = () => {
     setIsRegisterModalOpen(false);
     setIsAuthModalOpen(true);
   };
-  
 
   return (
     <>
@@ -95,143 +74,52 @@ export const Header: React.FC = () => {
               <div className="text-amber-100 text-sm mr-2">
                 {user?.firstName}
               </div>
-
+                <Tooltip
+                  trigger={
+                    <Button 
+                      color="orange"
+                      size="md"
+                    >
+                      <span>Список досок</span>
+                    </Button>
+                  }
+                  width={320}
+                  triggerMode="click"
+                  offset={12}
+                  position="bottom"
+                  isOpen={isTooltipOpen}
+                  onOpenChange={setIsTooltipOpen}
+                >
+                  <BoardsTooltipContent
+                    currentBoard={currentBoard}
+                    onBoardSelect={handleBoardSelect}
+                    isOpen={isTooltipOpen}
+                  />
+              </Tooltip>
               <Button 
                   onClick={() => setIsCreateModalOpen(true)}
-                  disabled={isLoading}
                   color="orange"
                   size="md"
-                  className="flex items-center space-x-2"
                 >
                   <span>Новая доска</span>
               </Button>
-
-            <div className="relative">
-                <Button 
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    disabled={isLoading}
-                    color="orange"
-                    size="md"
-                    className="flex items-center space-x-2"
-                  >
-                  <span>Список досок</span>
-                </Button>
-                {isMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl py-2 z-50 border border-amber-200">
-                    {/* Заголовок и управление */}
-                    <div className="px-4 py-2 border-b border-amber-100">
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="text-sm font-semibold text-amber-800">Доски</h3>
-                        <button
-                          onClick={handleFetchAllBoards}
-                          className="text-xs text-amber-600 hover:text-amber-800"
-                        >
-                          Обновить
-                        </button>
-                      </div>
-                      
-                      {/* Фильтры */}
-                      <div className="space-y-2">
-                        <label className="flex items-center space-x-2">
-                          <input 
-                            type="checkbox" 
-                            checked={showMyBoards}
-                            onChange={(e) => setShowMyBoards(e.target.checked)}
-                            className="rounded text-amber-600" 
-                          />
-                          <span className="text-sm text-gray-700">Мои доски ({myBoards.length})</span>
-                        </label>
-                        <label className="flex items-center space-x-2">
-                          <input 
-                            type="checkbox" 
-                            checked={showOtherBoards}
-                            onChange={(e) => setShowOtherBoards(e.target.checked)}
-                            className="rounded text-amber-600" 
-                          />
-                          <span className="text-sm text-gray-700">Чужие доски ({otherBoards.length})</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {/* Список досок */}
-                    <div className="max-h-60 overflow-y-auto">
-                      {showMyBoards && myBoards.length > 0 && (
-                        <div className="px-4 py-2">
-                          <h4 className="text-xs font-semibold text-amber-600 mb-2 uppercase tracking-wide">Мои доски</h4>
-                          <div className="space-y-1">
-                            {myBoards.map(board => (
-                              <button
-                                key={board.id}
-                                onClick={() => handleBoardSelect(board)}
-                                className={`w-full text-left text-sm rounded px-2 py-1 transition-colors ${
-                                  currentBoard?.id === board.id 
-                                    ? 'bg-amber-100 text-amber-800' 
-                                    : 'text-gray-700 hover:bg-amber-50'
-                                }`}
-                              >
-                                <div className="font-medium">{board.title}</div>
-                                {board.description && (
-                                  <div className="text-xs text-gray-500 truncate">{board.description}</div>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {showOtherBoards && otherBoards.length > 0 && (
-                        <div className="px-4 py-2 border-t border-amber-100">
-                          <h4 className="text-xs font-semibold text-purple-600 mb-2 uppercase tracking-wide">Чужие доски</h4>
-                          <div className="space-y-1">
-                            {otherBoards.map(board => (
-                              <button
-                                key={board.id}
-                                onClick={() => handleBoardSelect(board)}
-                                className={`w-full text-left text-sm rounded px-2 py-1 transition-colors ${
-                                  currentBoard?.id === board.id 
-                                    ? 'bg-purple-100 text-purple-800' 
-                                    : 'text-gray-700 hover:bg-purple-50'
-                                }`}
-                              >
-                                <div className="font-medium">{board.title}</div>
-                                {board.description && (
-                                  <div className="text-xs text-gray-500 truncate">{board.description}</div>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {(boards.length === 0) && (
-                        <div className="px-4 py-4 text-center text-gray-500 text-sm">
-                          Нет доступных досок
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
               {user ? 
                 (<Button 
-                  onClick={handleLogout}
-                  variant="icon"
-                  color="orange"
-                  size="md"
-                  title="Выйти"
-                >
-                  Выйти
+                    onClick={handleLogout}
+                    variant="icon"
+                    color="orange"
+                    size="md"
+                  >
+                    Выйти
                 </Button>
-                  ) : (
+                    ) : (
                 <Button 
-                  onClick={handleOpenAuthModal}
-                  variant="icon"
-                  color="orange"
-                  size="md"
-                  title="Войти"
-                >
-                  Войти
+                    onClick={handleOpenAuthModal}
+                    variant="icon"
+                    color="orange"
+                    size="md"
+                  >
+                    Войти
                 </Button>)}
             </div>
           </div>

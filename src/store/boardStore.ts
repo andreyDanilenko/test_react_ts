@@ -55,12 +55,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
   fetchAllBoards: async () => {
     const state = get();
-    
-    // Проверяем, не загружаем ли мы уже данные
     if (state.isLoading) return;
-    
-    // Или проверяем, есть ли уже данные
-    // if (state.boards.length > 0) return;
     
     set({ isLoading: true, error: null });
     try {

@@ -128,13 +128,11 @@ export const Board: React.FC = memo(() => {
       className="relative flex-1 p-8 bg-amber-50 overflow-hidden border-2 border-amber-200 rounded-2xl shadow-lg"
       style={{ maxHeight: '100vh' }}
     >
-      {/* Декоративные элементы доски */}
       <div className="absolute top-4 left-4 w-3 h-3 bg-amber-300 rounded-full opacity-60"></div>
       <div className="absolute top-4 right-4 w-3 h-3 bg-amber-300 rounded-full opacity-60"></div>
       <div className="absolute bottom-4 left-4 w-3 h-3 bg-amber-300 rounded-full opacity-60"></div>
       <div className="absolute bottom-4 right-4 w-3 h-3 bg-amber-300 rounded-full opacity-60"></div>
       
-      {/* Сетка для визуального разделения */}
       <div className="absolute inset-0 opacity-10">
         <div className="grid grid-cols-12 gap-4 h-full">
           {Array.from({ length: 12 }).map((_, i) => (
@@ -143,7 +141,6 @@ export const Board: React.FC = memo(() => {
         </div>
       </div>
       
-      {/* Стикеры */}
       {stickers.map(sticky => {
         const handlers = createStickyHandlers(sticky.id);
         
