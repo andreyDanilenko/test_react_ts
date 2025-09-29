@@ -4,12 +4,18 @@ import { useAuthStore } from '../store/authStore';
 import { useBoardStore } from '../store/boardStore';
 import type { IBoard } from '../types/board';
 import { CreateBoardModal } from './modals/CreateBoardModal';
+import { Button } from './uikit/BaseButton';
+import { AuthModal } from './modals/AuthModal';
+import { RegisterModal } from './modals/RegisterModal';
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [showMyBoards, setShowMyBoards] = useState(true);
   const [showOtherBoards, setShowOtherBoards] = useState(true);
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
 
   const { user, resetUser } = useAuthStore();
@@ -42,17 +48,27 @@ export const Header: React.FC = () => {
     resetUser()
   }, [resetUser]);
 
-  const handleLogin = useCallback(() => {
-
-  }, []);
-
-
   useEffect(() => {
     console.log('Fetching boards...');    
     fetchAllBoards();
   }, []); // 
 
   console.log(user);
+
+  const handleOpenAuthModal = () => {
+    setIsAuthModalOpen(true);
+  };
+
+
+  const handleSwitchToRegister = () => {
+    setIsAuthModalOpen(false);
+    setIsRegisterModalOpen(true);
+  };
+
+  const handleSwitchToAuth = () => {
+    setIsRegisterModalOpen(false);
+    setIsAuthModalOpen(true);
+  };
   
 
   return (
@@ -60,7 +76,6 @@ export const Header: React.FC = () => {
       <header className="bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            {/* Логотип и текущая доска */}
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-amber-400 rounded-lg flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-800" viewBox="0 0 20 20" fill="currentColor">
@@ -81,24 +96,26 @@ export const Header: React.FC = () => {
                 {user?.firstName}
               </div>
 
-              {/* Кнопка создания доски */}
-              <button 
-                onClick={() => setIsCreateModalOpen(true)}
-                disabled={isLoading}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
-              >
-                <span>Новая доска</span>
-              </button>
+              <Button 
+                  onClick={() => setIsCreateModalOpen(true)}
+                  disabled={isLoading}
+                  color="orange"
+                  size="md"
+                  className="flex items-center space-x-2"
+                >
+                  <span>Новая доска</span>
+              </Button>
 
-              {/* Выпадающее меню досок */}
             <div className="relative">
-              <button 
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                disabled={isLoading}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
-              >
-                <span>Список досок</span>
-              </button>
+                <Button 
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    disabled={isLoading}
+                    color="orange"
+                    size="md"
+                    className="flex items-center space-x-2"
+                  >
+                  <span>Список досок</span>
+                </Button>
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl py-2 z-50 border border-amber-200">
                     {/* Заголовок и управление */}
@@ -196,24 +213,26 @@ export const Header: React.FC = () => {
                 )}
               </div>
 
-              {/* Кнопка выхода */}
               {user ? 
-              <button 
-                onClick={handleLogout}
-                className="p-2 hover:bg-amber-500 rounded-lg transition-colors duration-200"
-                title="Выйти"
-              >
-                Выйти
-              </button> : 
-                 <button 
-                onClick={handleLogin}
-                className="p-2 hover:bg-amber-500 rounded-lg transition-colors duration-200"
-                title="Выйти"
-              >
-                Войти
-              </button>
-              }
-
+                (<Button 
+                  onClick={handleLogout}
+                  variant="icon"
+                  color="orange"
+                  size="md"
+                  title="Выйти"
+                >
+                  Выйти
+                </Button>
+                  ) : (
+                <Button 
+                  onClick={handleOpenAuthModal}
+                  variant="icon"
+                  color="orange"
+                  size="md"
+                  title="Войти"
+                >
+                  Войти
+                </Button>)}
             </div>
           </div>
         </div>
@@ -222,6 +241,16 @@ export const Header: React.FC = () => {
       <CreateBoardModal 
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+      />
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSwitchToRegister={handleSwitchToRegister}
+      />
+      <RegisterModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        onSwitchToAuth={handleSwitchToAuth}
       />
     </>
   );

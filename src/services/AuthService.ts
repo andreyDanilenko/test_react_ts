@@ -32,6 +32,17 @@ export class AuthService extends BaseApiService {
     useAuthStore.getState().setUser(data.data.user);
   }
 
+  async register(userData: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+  }) {
+    const data = await this.post<LoginResponse>('/auth/register', userData);
+    localStorage.setItem('authToken', data.data.token);
+    useAuthStore.getState().setUser(data.data.user);
+  }
+
   async fetchCurrentUser() {
     const response = await this.get<UserResponse>('/auth/me');    
     useAuthStore.getState().setUser(response.data);

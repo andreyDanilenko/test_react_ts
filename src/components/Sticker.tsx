@@ -1,4 +1,3 @@
-// src/components/Sticker.tsx
 import React from 'react';
 import { IconButton } from './uikit/BaseButton';
 import { EditIcon } from '../assets/icons/EditIcon';
@@ -53,7 +52,7 @@ export const Sticker: React.FC<StickerProps> = ({
 
   return (
     <div
-      className={`absolute border-2 rounded-xl shadow-md p-4 w-40 min-h-48 flex flex-col justify-between transform transition-transform duration-200 hover:shadow-lg ${
+      className={`absolute border-2 rounded-xl shadow-md p-4 w-40 min-h-28 flex flex-col justify-between transform transition-transform duration-200 hover:shadow-lg ${
         isOwnedByUser ? 'cursor-move' : 'cursor-not-allowed opacity-80'
       }`}
       data-id={id}
@@ -66,13 +65,10 @@ export const Sticker: React.FC<StickerProps> = ({
       }}
     >
       <div className="font-medium text-sm mb-2 truncate">{title}</div>
-
       <div className="text-sm flex-1 overflow-auto opacity-90">{content || ''}</div>
-
       <div className="flex justify-between items-center text-xs mt-2 opacity-80">
         <span>{formattedTime}</span>
         
-        {/* Показываем иконки управления только для своих стикеров */}
         {isOwnedByUser && (
           <div className="flex gap-1">
             <IconButton
