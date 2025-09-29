@@ -39,9 +39,9 @@ export class BoardService extends BaseApiService {
     return response.data.stickyNotes
   }
 
-  async getPublicStickyNotes(boardId: string): Promise<IStickyNoteSanitized[]> {
+  async getPublicStickyNotes(boardId: string): Promise<{board: IBoardSanitized, stickyNotes: IStickyNoteSanitized[]}> {
     const response = await this.get<{  data: { board: IBoardSanitized, stickyNotes: IStickyNoteSanitized[] }; message: string; success: boolean }>(`/boards/${boardId}/all/sticky-notes`);    
-    return response.data.stickyNotes
+    return response.data
   }
 
 

@@ -87,6 +87,7 @@ export const Board: React.FC = memo(() => {
       const boardRect = boardRef.current?.getBoundingClientRect();
       if (!boardRect) return;
 
+      // Исправляем границы - убираем вычитание размеров стикера
       const boundedX = Math.max(0, Math.min(e.clientX - offsetX, 2000));
       const boundedY = Math.max(0, Math.min(e.clientY - offsetY, 2000));
 

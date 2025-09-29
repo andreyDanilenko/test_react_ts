@@ -93,9 +93,9 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   fetchPublicStickyNotes: async (boardId: string) => {
     set({ isLoading: true, error: null });
     try {
-      const stickyNotes = await boardService.getPublicStickyNotes(boardId);
-      
-      set({ stickyNotes, isLoading: false });
+      const data = await boardService.getPublicStickyNotes(boardId);      
+      set({ currentBoard: data.board })
+      set({ stickyNotes: data.stickyNotes, isLoading: false });
     } catch (error) {
       set({ error: (error as Error).message, isLoading: false });
     }
