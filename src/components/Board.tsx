@@ -5,7 +5,13 @@ import { useAuthStore } from '../store/authStore';
 
 export const Board: React.FC = memo(() => {
   const boardRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const draggingNoteRef = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null);
+  const [isDraggingBoard, setIsDraggingBoard] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [startY, setStartY] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
 
   const { 
     currentBoard, 
@@ -23,11 +29,52 @@ export const Board: React.FC = memo(() => {
     setStickers(stickyNotes)
   }, [stickyNotes])
 
+  // Обработчик перетаскивания доски
+  const handleBoardMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    
+    setIsDraggingBoard(true);
+    setStartX(e.pageX - containerRef.current.offsetLeft);
+    setStartY(e.pageY - containerRef.current.offsetTop);
+    setScrollLeft(containerRef.current.scrollLeft);
+    setScrollTop(containerRef.current.scrollTop);
+  }, []);
+
+  const handleBoardMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDraggingBoard || !containerRef.current) return;
+    
+    e.preventDefault();
+    const x = e.pageX - containerRef.current.offsetLeft;
+    const y = e.pageY - containerRef.current.offsetTop;
+    const walkX = (x - startX) * 1; // Скорость перемещения
+    const walkY = (y - startY) * 1;
+    
+    containerRef.current.scrollLeft = scrollLeft - walkX;
+    containerRef.current.scrollTop = scrollTop - walkY;
+  }, [isDraggingBoard, startX, startY, scrollLeft, scrollTop]);
+
+  const handleBoardMouseUp = useCallback(() => {
+    setIsDraggingBoard(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDraggingBoard) {
+      window.addEventListener('mousemove', handleBoardMouseMove);
+      window.addEventListener('mouseup', handleBoardMouseUp);
+      
+      return () => {
+        window.removeEventListener('mousemove', handleBoardMouseMove);
+        window.removeEventListener('mouseup', handleBoardMouseUp);
+      };
+    }
+  }, [isDraggingBoard, handleBoardMouseMove, handleBoardMouseUp]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent, stickyId: string, positionX: number, positionY: number) => {
     if (!isBoardOwnedByUser) return;
-    const boardRect = boardRef.current?.getBoundingClientRect();
-    if (!boardRect) return;
 
+    // Останавливаем всплытие, чтобы не активировалось перетаскивание доски
+    e.stopPropagation();
+    
     draggingNoteRef.current = {
       id: stickyId,
       offsetX: e.clientX - positionX,
@@ -42,8 +89,8 @@ export const Board: React.FC = memo(() => {
       const boardRect = boardRef.current?.getBoundingClientRect();
       if (!boardRect) return;
 
-      const boundedX = Math.max(0, Math.min(e.clientX - offsetX, boardRect.width - 160));
-      const boundedY = Math.max(0, Math.min(e.clientY - offsetY, boardRect.height - 192));
+      const boundedX = Math.max(0, Math.min(e.clientX - offsetX, 2000 - 160));
+      const boundedY = Math.max(0, Math.min(e.clientY - offsetY, 2000 - 192));
 
       setStickers(prevStickers => 
         prevStickers.map(sticker => {         
@@ -124,43 +171,56 @@ export const Board: React.FC = memo(() => {
 
   return (
     <main
-      ref={boardRef}
-      className="relative flex-1 p-8 bg-amber-50 overflow-hidden border-2 border-amber-200 rounded-2xl shadow-lg"
+      className="relative flex-1 bg-amber-50 border-2 border-amber-200 rounded-2xl shadow-lg overflow-hidden"
       style={{ maxHeight: '100vh' }}
     >
-      <div className="absolute top-4 left-4 w-3 h-3 bg-amber-300 rounded-full opacity-60"></div>
-      <div className="absolute top-4 right-4 w-3 h-3 bg-amber-300 rounded-full opacity-60"></div>
-      <div className="absolute bottom-4 left-4 w-3 h-3 bg-amber-300 rounded-full opacity-60"></div>
-      <div className="absolute bottom-4 right-4 w-3 h-3 bg-amber-300 rounded-full opacity-60"></div>
-      
-      <div className="absolute inset-0 opacity-10">
-        <div className="grid grid-cols-12 gap-4 h-full">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="border-r border-amber-300 h-full"></div>
-          ))}
+      {/* Контейнер для скролла */}
+      <div
+        ref={containerRef}
+        className="w-full h-full overflow-auto cursor-grab active:cursor-grabbing"
+        onMouseDown={handleBoardMouseDown}
+      >
+        {/* Фиксированная доска 2000x2000px */}
+        <div
+          ref={boardRef}
+          className="relative bg-amber-50"
+          style={{ 
+            width: '2000px', 
+            height: '2000px',
+            backgroundImage: `
+              linear-gradient(rgba(245, 158, 11, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(245, 158, 11, 0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px'
+          }}
+        >
+          <div className="absolute top-4 left-4 w-3 h-3 bg-amber-300 rounded-full opacity-60"></div>
+          <div className="absolute top-4 right-4 w-3 h-3 bg-amber-300 rounded-full opacity-60"></div>
+          <div className="absolute bottom-4 left-4 w-3 h-3 bg-amber-300 rounded-full opacity-60"></div>
+          <div className="absolute bottom-4 right-4 w-3 h-3 bg-amber-300 rounded-full opacity-60"></div>
+          
+          {stickers.map(sticky => {
+            const handlers = createStickyHandlers(sticky.id);
+            
+            return (
+              <div key={sticky.id} onMouseDown={handlers.onMouseDown}>
+                <Sticker
+                  id={sticky.id}
+                  title={sticky.title}
+                  content={sticky.content}
+                  color={sticky.color}
+                  positionX={sticky.positionX}
+                  positionY={sticky.positionY}
+                  createdAt={sticky.createdAt}
+                  isOwnedByUser={isBoardOwnedByUser}
+                  onEdit={handlers.onEdit}
+                  onDelete={handlers.onDelete}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
-      
-      {stickers.map(sticky => {
-        const handlers = createStickyHandlers(sticky.id);
-        
-        return (
-          <div key={sticky.id} onMouseDown={handlers.onMouseDown}>
-            <Sticker
-              id={sticky.id}
-              title={sticky.title}
-              content={sticky.content}
-              color={sticky.color}
-              positionX={sticky.positionX}
-              positionY={sticky.positionY}
-              createdAt={sticky.createdAt}
-              isOwnedByUser={isBoardOwnedByUser}
-              onEdit={handlers.onEdit}
-              onDelete={handlers.onDelete}
-            />
-          </div>
-        );
-      })}
     </main>
   );
 });

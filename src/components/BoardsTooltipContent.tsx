@@ -41,8 +41,8 @@ export const BoardsTooltipContent: React.FC<BoardsTooltipContentProps> = ({
 
   return (
     <>
-      <div className="px-4 py-2 border-b border-amber-100">
-        <div className="flex justify-between items-center mb-2">
+    { user &&  <div className="px-4 py-2 border-b border-amber-100">
+       <div className="flex justify-between items-center mb-2">
           <h3 className="text-sm font-semibold text-amber-800">Доски</h3>
           <button
             onClick={handleFetchAllBoards}
@@ -51,7 +51,8 @@ export const BoardsTooltipContent: React.FC<BoardsTooltipContentProps> = ({
           >
             Обновить
           </button>
-        </div>
+        </div> 
+
         
         <div className="space-y-2">
           <label className="flex items-center space-x-2">
@@ -73,7 +74,7 @@ export const BoardsTooltipContent: React.FC<BoardsTooltipContentProps> = ({
             <span className="text-sm text-gray-700">Чужие доски ({otherBoards.length})</span>
           </label>
         </div>
-      </div>
+      </div> }
 
       <div className="max-h-60 overflow-y-auto">
         {showMyBoards && myBoards.length > 0 && (
@@ -102,7 +103,7 @@ export const BoardsTooltipContent: React.FC<BoardsTooltipContentProps> = ({
 
         {showOtherBoards && otherBoards.length > 0 && (
           <div className="px-4 py-2 border-t border-amber-100">
-            <h4 className="text-xs font-semibold text-purple-600 mb-2 uppercase tracking-wide">Чужие доски</h4>
+            { user && <h4 className="text-xs font-semibold text-purple-600 mb-2 uppercase tracking-wide">Чужие доски</h4> }
             <div className="space-y-1">
               {otherBoards.map(board => (
                 <button
