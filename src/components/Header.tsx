@@ -12,7 +12,7 @@ export const Header: React.FC = () => {
   const [showOtherBoards, setShowOtherBoards] = useState(true);
 
 
-  const { user } = useAuthStore();
+  const { user, resetUser } = useAuthStore();
   const { 
     boards, 
     currentBoard, 
@@ -23,11 +23,9 @@ export const Header: React.FC = () => {
     isLoading 
   } = useBoardStore();
 
-
   const myBoards = boards.filter(board => board.userId === user?.id);
   const otherBoards = boards.filter(board => board.userId !== user?.id);
 
-  // Мемоизируем обработчики
   const handleBoardSelect = useCallback((board: IBoard) => {
     setCurrentBoard(board);
     fetchPublicStickyNotes(board.id);
@@ -40,15 +38,22 @@ export const Header: React.FC = () => {
   }, [fetchUserBoards, fetchAllBoards]);
 
   const handleLogout = useCallback(() => {
-    localStorage.removeItem('user');
-    window.location.reload();
+    localStorage.removeItem('authToken');
+    resetUser()
+  }, [resetUser]);
+
+  const handleLogin = useCallback(() => {
+    
   }, []);
 
-  // Используйте пустой массив зависимостей, если хотите вызвать только при монтировании
+
   useEffect(() => {
-    console.log('Fetching boards...');
+    console.log('Fetching boards...');    
     fetchAllBoards();
   }, []); // 
+
+  console.log(user);
+  
 
   return (
     <>
@@ -71,9 +76,7 @@ export const Header: React.FC = () => {
               </div>
             </div>
 
-            {/* Кнопки действий */}
             <div className="flex items-center space-x-3">
-              {/* Информация о пользователе */}
               <div className="text-amber-100 text-sm mr-2">
                 {user?.firstName}
               </div>
@@ -84,24 +87,18 @@ export const Header: React.FC = () => {
                 disabled={isLoading}
                 className="px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
                 <span>Новая доска</span>
               </button>
 
               {/* Выпадающее меню досок */}
-              <div className="relative">
-                <button 
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  disabled={isLoading}
-                  className="p-2 hover:bg-amber-500 disabled:opacity-50 rounded-lg transition-colors duration-200"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </button>
-
+            <div className="relative">
+              <button 
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                disabled={isLoading}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
+              >
+                <span>Список досок</span>
+              </button>
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl py-2 z-50 border border-amber-200">
                     {/* Заголовок и управление */}
@@ -200,15 +197,23 @@ export const Header: React.FC = () => {
               </div>
 
               {/* Кнопка выхода */}
+              {user ? 
               <button 
                 onClick={handleLogout}
                 className="p-2 hover:bg-amber-500 rounded-lg transition-colors duration-200"
                 title="Выйти"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
-                </svg>
+                Выйти
+              </button> : 
+                 <button 
+                onClick={handleLogin}
+                className="p-2 hover:bg-amber-500 rounded-lg transition-colors duration-200"
+                title="Выйти"
+              >
+                Войти
               </button>
+              }
+
             </div>
           </div>
         </div>

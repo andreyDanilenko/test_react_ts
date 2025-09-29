@@ -4,9 +4,11 @@ import type { User } from '../types/user';
 interface AuthState {
   user: User | null;
   setUser: (user: User | null) => void;
+  resetUser: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   setUser: (user) => set({ user }),
+  resetUser: () => set({ user: null })
 }));
