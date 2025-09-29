@@ -29,7 +29,6 @@ export const Board: React.FC = memo(() => {
     setStickers(stickyNotes)
   }, [stickyNotes])
 
-  // Обработчик перетаскивания доски
   const handleBoardMouseDown = useCallback((e: React.MouseEvent) => {
     if (!containerRef.current) return;
     
@@ -46,7 +45,7 @@ export const Board: React.FC = memo(() => {
     e.preventDefault();
     const x = e.pageX - containerRef.current.offsetLeft;
     const y = e.pageY - containerRef.current.offsetTop;
-    const walkX = (x - startX) * 1; // Скорость перемещения
+    const walkX = (x - startX) * 1;
     const walkY = (y - startY) * 1;
     
     containerRef.current.scrollLeft = scrollLeft - walkX;
@@ -72,7 +71,6 @@ export const Board: React.FC = memo(() => {
   const handleMouseDown = useCallback((e: React.MouseEvent, stickyId: string, positionX: number, positionY: number) => {
     if (!isBoardOwnedByUser) return;
 
-    // Останавливаем всплытие, чтобы не активировалось перетаскивание доски
     e.stopPropagation();
     
     draggingNoteRef.current = {
@@ -89,8 +87,8 @@ export const Board: React.FC = memo(() => {
       const boardRect = boardRef.current?.getBoundingClientRect();
       if (!boardRect) return;
 
-      const boundedX = Math.max(0, Math.min(e.clientX - offsetX, 2000 - 160));
-      const boundedY = Math.max(0, Math.min(e.clientY - offsetY, 2000 - 192));
+      const boundedX = Math.max(0, Math.min(e.clientX - offsetX, 2000));
+      const boundedY = Math.max(0, Math.min(e.clientY - offsetY, 2000));
 
       setStickers(prevStickers => 
         prevStickers.map(sticker => {         
@@ -174,13 +172,14 @@ export const Board: React.FC = memo(() => {
       className="relative flex-1 bg-amber-50 border-2 border-amber-200 rounded-2xl shadow-lg overflow-hidden"
       style={{ maxHeight: '100vh' }}
     >
-      {/* Контейнер для скролла */}
       <div
         ref={containerRef}
         className="w-full h-full overflow-auto cursor-grab active:cursor-grabbing"
         onMouseDown={handleBoardMouseDown}
+        style={{
+          overscrollBehavior: 'none'
+        }}
       >
-        {/* Фиксированная доска 2000x2000px */}
         <div
           ref={boardRef}
           className="relative bg-amber-50"
@@ -203,7 +202,15 @@ export const Board: React.FC = memo(() => {
             const handlers = createStickyHandlers(sticky.id);
             
             return (
-              <div key={sticky.id} onMouseDown={handlers.onMouseDown}>
+              <div 
+                key={sticky.id} 
+                onMouseDown={handlers.onMouseDown}
+                style={{
+                  position: 'absolute',
+                  left: sticky.positionX,
+                  top: sticky.positionY,
+                }}
+              >
                 <Sticker
                   id={sticky.id}
                   title={sticky.title}
